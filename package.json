@@ -1,0 +1,27 @@
+{
+  "name": "build-my-locals",
+  "version": "1.0.0",
+  "description": "Build local file:// dependencies",
+  "main": "index.js",
+  "scripts": {
+    "test": "nyc tape test.js | tap-spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gwillz/build-my-locals.git"
+  },
+  "author": "Gwilyn Saunders",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gwillz/build-my-locals/issues"
+  },
+  "homepage": "https://github.com/gwillz/build-my-locals#readme",
+  "devDependencies": {
+    "nyc": "^12.0.2",
+    "tap-spec": "^5.0.0",
+    "tape": "^4.9.1"
+  },
+  "dependencies": {
+    "chalk": "^2.4.1"
+  }
+}

@@ -1,0 +1,5 @@
+node_modules
+test/dest
+test/package-lock.json
+.nyc_output
+.coverage
