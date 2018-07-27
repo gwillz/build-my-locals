@@ -14,7 +14,7 @@ const {spawn} = require('child_process')
  *
  * This reads no runtime arguments or environment variables.
  */
-async function main(options) {
+function main(options) {
     options = {
         script: 'prepare',
         target: './package.json',
@@ -68,22 +68,19 @@ async function main(options) {
         processes.push(child);
     }
     
-    try {
-        // execute all at once
-        await Promise.all(promises);
-        return 0;
-    }
-    catch (callee) {
+    // execute all at once
+    return Promise.all(promises)
+    .catch(({name, callee}) => {
         for (let child of processes) {
             if (child === callee) continue;
             child.kill();
         }
-        return 1;
-    }
+        throw new Error(`Fatal error in '${name}'`);
+    })
 }
 
 function run(name, script, cwd) {
-    const child = spawn('npm', ['run', script], { cwd });
+    const child = spawn('npm', ['run', '-s', script], { cwd });
     
     // connect output events
     let output = '';
@@ -95,7 +92,7 @@ function run(name, script, cwd) {
         child.on('error', err => {
             console.log('>>', chalk.red('Fatal error!'));
             console.log(err);
-            reject(child);
+            reject({name, child});
         })
         
         // don't fret little one, this script only exits after you're done.
@@ -105,7 +102,7 @@ function run(name, script, cwd) {
                 console.log(output);
                 
                 // exit, kills other child processes (I lied.)
-                reject(child);
+                reject({name, child});
                 return;
             }
             // good
@@ -117,11 +114,36 @@ function run(name, script, cwd) {
     return {child, promise};
 }
 
+function getArgs(argv = process.argv) {
+    let args = {};
+    let name = null;
+    
+    for (let arg of argv.slice(2)) {
+        if (arg.startsWith('--')) {
+            if (name) {
+                args[name] = true;
+            }
+            name = arg.slice(2);
+            continue;
+        }
+        if (name) {
+            args[name] = arg;
+            name = null;
+        }
+    }
+    if (name) {
+        args[name] = true;
+    }
+    return args;
+}
+
 /* istanbul ignore next */
 if (require.main === module) {
-    let script = process.argv[2];
-    let target = process.argv[3];
-    process.exit(main({script, target}));
+    main(getArgs())
+    .catch(err => {
+        process.exitCode = 1;
+    });
 }
 
 module.exports = main;
+module.exports.getArgs = getArgs;
