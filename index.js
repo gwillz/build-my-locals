@@ -119,18 +119,26 @@ function getArgs(argv = process.argv) {
     let name = null;
     
     for (let arg of argv.slice(2)) {
+        // current is a param
         if (arg.startsWith('--')) {
+            // previous was also param, therefore is a boolean
             if (name) {
                 args[name] = true;
             }
             name = arg.slice(2);
             continue;
         }
+        // last was a param
         if (name) {
+            // arrays
+            if (arg.includes(',')) {
+                arg = arg.split(',');
+            }
             args[name] = arg;
             name = null;
         }
     }
+    // last was a param, therefore a boolean
     if (name) {
         args[name] = true;
     }
