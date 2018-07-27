@@ -1,8 +1,8 @@
 {
-  "name": "build-my-locals-test-root",
+  "name": "build-my-locals-test-root-one",
   "version": "1.0.0",
   "description": "test",
-  "main": "index.js",
+  "private": true,
   "dependencies": {
       "sub1": "file:./sub1",
       "sub2": "file:./sub2",

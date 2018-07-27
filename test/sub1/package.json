@@ -1,10 +1,10 @@
 {
-  "name": "build-my-locals-test-sub2",
+  "name": "build-my-locals-test-sub1",
   "version": "1.0.0",
   "description": "test",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "prepare": "touch yes-it-worked.txt"
+    "prepare": "sleep 0.5 && touch yes-it-worked.txt"
   },
   "author": "",
   "license": "ISC"
