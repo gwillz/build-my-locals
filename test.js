@@ -7,10 +7,10 @@ test("Example project", assert => {
     clean();
     
     build({
-        package: './test/package.json',
+        target: './test/package.json',
     })
     .then(code => {
-        if (code > 0) assert.fail();
+        assert.ok(code === 0, "exits with zero");
         
         assert.ok(fs.existsSync('test/sub1/yes-it-worked.txt'));
         assert.ok(fs.existsSync('test/sub2/yes-it-worked.txt'));

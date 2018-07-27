@@ -14,22 +14,22 @@ const {spawn} = require('child_process')
  *
  * This reads no runtime arguments or environment variables.
  */
-function main(options) {
+async function main(options) {
     options = {
         script: 'prepare',
-        package: './package.json',
+        target: './package.json',
         groups: [
             'dependencies',
             'devDependencies',
         ],
         ...options,
     }
+    
     const processes = [];
     const promises = [];
-    let killed = false;
     
     // we're building the dependencies of this package
-    const root = require(options.package);
+    const root = require(options.target);
     
     // combine dependency group into a single map
     // this is important to avoid duplicates
@@ -50,7 +50,7 @@ function main(options) {
         if (proto !== 'file') continue;
         
         // local scripts are relative to the target package
-        const cwd = path.resolve(path.dirname(options.package), directory);
+        const cwd = path.resolve(path.dirname(options.target), directory);
         
         // this is a dependency package of the 'root' package
         const local = require(path.resolve(cwd, 'package.json'));
@@ -63,60 +63,65 @@ function main(options) {
         
         // build
         console.log('::', `Building '${name}'...`);
-        promises.push(run(name, options.script, cwd));
+        const {promise, child} = run(name, options.script, cwd);
+        promises.push(promise);
+        processes.push(child);
     }
     
-    return Promise.all(promises);
-    
-    // this function will access local vars: [processes, killed]
-    function run(name, script, cwd) {
-        return new Promise((resolve, reject) => {
-            const child = spawn('npm', ['run', script], { cwd });
-            processes.push(child);
-            
-            // connect output events
-            let output = '';
-            child.stdout.on('data', data => output += data);
-            child.stderr.on('data', data => output += data);
-            
-            child.on('error', err => {
-                console.log('>>', chalk.red('Fatal error!'));
-                console.log(err);
-                quit(child);
-            })
-            
-            // don't fret little one, this script only exits after you're done.
-            child.on('exit', err => {
-                if (err > 0 && !killed) {
-                    console.log('>>', chalk.red('Failed!'));
-                    console.log(output);
-                    
-                    // hard exit, kills other child processes (I lied.)
-                    quit(child);
-                }
-                // good
-                console.log('>>', chalk.green('Completed'), `'${name}'`);
-                resolve();
-            })
-            
-            // at this point, this is straight up abuse of closures
-            function quit(callee) {
-                killed = true;
-                for (let child of processes) {
-                    if (child === callee) continue;
-                    child.kill();
-                }
-                reject();
-            }
-        })
+    try {
+        // execute all at once
+        await Promise.all(promises);
+        return 0;
+    }
+    catch (callee) {
+        for (let child of processes) {
+            if (child === callee) continue;
+            child.kill();
+        }
+        return 1;
     }
 }
 
+function run(name, script, cwd) {
+    const child = spawn('npm', ['run', script], { cwd });
+    
+    // connect output events
+    let output = '';
+    child.stdout.on('data', data => output += data);
+    child.stderr.on('data', data => output += data);
+    
+    // tie up results in a promise
+    const promise = new Promise((resolve, reject) => {
+        child.on('error', err => {
+            console.log('>>', chalk.red('Fatal error!'));
+            console.log(err);
+            reject(child);
+        })
+        
+        // don't fret little one, this script only exits after you're done.
+        child.on('exit', err => {
+            if (err > 0) {
+                console.log('>>', chalk.red('Failed!'));
+                console.log(output);
+                
+                // exit, kills other child processes (I lied.)
+                reject(child);
+                return;
+            }
+            // good
+            console.log('>>', chalk.green('Completed'), `'${name}'`);
+            resolve();
+        })
+    })
+    
+    return {child, promise};
+}
+
+/* istanbul ignore next */
 if (require.main === module) {
     let script = process.argv[2];
-    let package = process.argv[3];
-    main({script, package})
-    .catch(() => process.exit(1));
+    let target = process.argv[3];
+    process.exit(main({script, target}));
 }
 
 module.exports = main;
