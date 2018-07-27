@@ -1,0 +1,14 @@
+{
+  "name": "build-my-locals-test-root",
+  "version": "1.0.0",
+  "description": "test",
+  "main": "index.js",
+  "dependencies": {
+      "sub1": "file:./sub1",
+      "sub2": "file:./sub2",
+      "build-my-locals": "git+http://github.com/gwillz/build-my-locals.git",
+      "chalk": "^2.4.1"
+  },
+  "author": "",
+  "license": "ISC"
+}

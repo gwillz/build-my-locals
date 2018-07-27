@@ -1,5 +1,4 @@
 node_modules
-test/dest
-test/package-lock.json
+test/*/*.txt
 .nyc_output
 .coverage

@@ -1,0 +1,11 @@
+{
+  "name": "build-my-locals-test-sub1",
+  "version": "1.0.0",
+  "description": "test",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "touch yes-it-worked.txt"
+  },
+  "author": "",
+  "license": "ISC"
+}
