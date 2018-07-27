@@ -1,7 +1,7 @@
 {
   "name": "build-my-locals",
   "version": "1.0.0",
-  "description": "Build local file:// dependencies",
+  "description": "Build local file: dependencies",
   "main": "index.js",
   "scripts": {
     "test": "nyc tape test.js | tap-spec"
