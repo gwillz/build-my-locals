@@ -35,6 +35,12 @@ test("getArgs()", assert => {
         
         assert.deepEqual(actual, expected);
     }
+    {
+        const actual = build.getArgs(['node', 'script.js', '--groups', 'foo,bar,foobar']);
+        const expected = {groups: ['foo', 'bar', 'foobar']};
+        
+        assert.deepEqual(actual, expected);
+    }
     assert.end();
 })
 
