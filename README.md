@@ -1,7 +1,8 @@
 # Build My Locals!
 
 Sometimes, particularly in a mono-repo, you have projects spread about that
-are referenced directly by their local path.
+are referenced directly by their local path. Those projects may have a build
+script and need to precompiled before being included in the bigger scope.
 
 So this script will build any local dependencies (or devDependencies) in
 your `package.json` file.
@@ -40,4 +41,3 @@ This will build `bar` and `foobar` via their `prepare` script, but not `foo` or 
 ## TODO
 - recursively build local dependencies
   - but maintain a 'already-build' list
-- args for a list of dependency groups
