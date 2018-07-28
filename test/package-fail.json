@@ -1,11 +1,12 @@
 {
   "name": "build-my-locals-test-root-fail",
   "version": "1.0.0",
-  "description": "test",
+  "description": "This test will fail on 'sub-bad'",
   "private": true,
   "dependencies": {
       "sub1": "file:./sub1",
       "sub-bad": "file:./sub-bad",
+      "sub2": "file:./sub2",
       "build-my-locals": "git+http://github.com/gwillz/build-my-locals.git",
       "chalk": "^2.4.1"
   },

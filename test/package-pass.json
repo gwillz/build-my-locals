@@ -1,7 +1,7 @@
 {
   "name": "build-my-locals-test-root-one",
   "version": "1.0.0",
-  "description": "test",
+  "description": "this test will pass",
   "private": true,
   "dependencies": {
       "sub1": "file:./sub1",

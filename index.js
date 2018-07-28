@@ -98,7 +98,7 @@ function run(name, script, cwd) {
         // don't fret little one, this script only exits after you're done.
         child.on('exit', err => {
             if (err > 0) {
-                console.log('>>', chalk.red('Failed!'));
+                console.log('>>', chalk.red(`Failed on '${name}'`));
                 console.log(output);
                 
                 // exit, kills other child processes (I lied.)
