@@ -4,6 +4,8 @@ import path from 'path';
 import chalk from 'chalk';
 import { spawn, ChildProcess }from 'child_process';
 
+const ROOT_SCRIPTS = ["install", "ci"];
+
 interface Options {
     script: string;
     target: string;
@@ -64,7 +66,7 @@ export default async function main(opts?: Partial<Options>) {
         const local = require(path.resolve(cwd, 'package.json'));
 
         // warning if missing target script
-        if (!local.scripts || !local.scripts[options.script]) {
+        if (!local.scripts || !local.scripts[options.script] && !ROOT_SCRIPTS.includes(options.script)) {
             console.log(chalk.red(`:: Local '${name}' does not have a '${options.script}' script`));
             continue;
         }
@@ -95,7 +97,10 @@ export default async function main(opts?: Partial<Options>) {
  * Execute a single script.
  */
 function run(name: string, script: string, cwd: string) {
-    const child = spawn('npm', ['run', '-s', script], { cwd });
+
+    const child = ROOT_SCRIPTS.includes(script)
+        ? spawn('npm', [script], { cwd })
+        : spawn('npm', ['run', '-s', script], { cwd });
 
     // connect output events
     let output = '';
@@ -182,7 +187,7 @@ if (require.main === module) {
 
     (async function() {
         try {
-            main(getArgs());
+            await main(getArgs());
         }
         catch (error) {
             console.log(error);
