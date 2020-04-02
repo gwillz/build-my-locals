@@ -24,13 +24,13 @@ function main(options) {
         ],
         ...options,
     }
-    
+
     const processes = [];
     const promises = [];
-    
+
     // we're building the dependencies of this package
     const root = require(options.target);
-    
+
     // combine dependency group into a single map
     // this is important to avoid duplicates
     const allDependencies = new Map();
@@ -39,35 +39,35 @@ function main(options) {
             allDependencies.set(name, root[group][name]);
         }
     }
-    
+
     for (let [name, dependency] of allDependencies) {
         // filter for non-repository packages
         const match = dependency.match(/([^:]+):(.+)/);
         if (!match) continue;
-        
+
         // filter 'file' type packages, aka. locals
         const [_, proto, directory] = match;
         if (proto !== 'file') continue;
-        
+
         // local scripts are relative to the target package
         const cwd = path.resolve(path.dirname(options.target), directory);
-        
+
         // this is a dependency package of the 'root' package
         const local = require(path.resolve(cwd, 'package.json'));
-        
+
         // warning if missing target script
         if (!local.scripts || !local.scripts[options.script]) {
             console.log(chalk.red(`:: Local '${name}' does not have a '${options.script}' script`));
             continue;
         }
-        
+
         // build
         console.log('::', `Building '${name}'...`);
         const {promise, child} = run(name, options.script, cwd);
         promises.push(promise);
         processes.push(child);
     }
-    
+
     // execute all at once
     return Promise.all(promises)
     .catch(({name, callee}) => {
@@ -81,12 +81,12 @@ function main(options) {
 
 function run(name, script, cwd) {
     const child = spawn('npm', ['run', '-s', script], { cwd });
-    
+
     // connect output events
     let output = '';
     child.stdout.on('data', data => output += data);
     child.stderr.on('data', data => output += data);
-    
+
     // tie up results in a promise
     const promise = new Promise((resolve, reject) => {
         child.on('error', err => {
@@ -94,13 +94,13 @@ function run(name, script, cwd) {
             console.log(err);
             reject({name, child});
         })
-        
+
         // don't fret little one, this script only exits after you're done.
         child.on('exit', err => {
             if (err > 0) {
                 console.log('>>', chalk.red(`Failed on '${name}'`));
                 console.log(output);
-                
+
                 // exit, kills other child processes (I lied.)
                 reject({name, child});
                 return;
@@ -110,14 +110,14 @@ function run(name, script, cwd) {
             resolve();
         })
     })
-    
+
     return {child, promise};
 }
 
 function getArgs(argv = process.argv) {
     let args = {};
     let name = null;
-    
+
     for (let arg of argv.slice(2)) {
         // current is a param
         if (arg.startsWith('--')) {
