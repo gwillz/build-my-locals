@@ -35,7 +35,7 @@ Given a `package.json`:
 ```
 
 Run `npm run libs` or `npx build-my-locals` in the same directory as `package.json`.
-This will build `bar` and `foobar` via their `prepare` script, but not `foo` or `remote`.
+This will build `bar` and `foobar` via their `prepare` script.
 
 ### Options
 
@@ -48,3 +48,4 @@ This will build `bar` and `foobar` via their `prepare` script, but not `foo` or 
 
 - recursively build local dependencies
 - maintain an 'already-build' list
+- a '--verbose' option
