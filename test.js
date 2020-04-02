@@ -1,8 +1,8 @@
 
 const test = require('tape')
 const fs = require('fs')
-const {spawnSync} = require('child_process')
-const build = require('./index')
+const { spawnSync } = require('child_process')
+const build = require('./dist/index');
 
 test("getArgs()", assert => {
     {
@@ -47,7 +47,7 @@ test("getArgs()", assert => {
 test("Successful build", assert => {
     clean();
 
-    build({
+    build.default({
         target: './test/package-pass.json',
     })
     .then(() => {
@@ -65,7 +65,7 @@ test("Successful build", assert => {
 test("Failed build", assert => {
     clean();
 
-    build({
+    build.default({
         target: './test/package-fail.json',
     })
     .then(() => {
