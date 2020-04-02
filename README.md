@@ -1,14 +1,22 @@
 # Build My Locals!
 
-Sometimes, particularly in a mono-repo, you have projects spread about that
-are referenced directly by their local path. Those projects may have a build
-script and need to precompiled before being included in the bigger scope.
+Sometimes, particularly in a mono-repo, one will have projects spread about that
+are referenced directly by their local path. Some of those projects may have a
+build script and need to compiled before being included in the bigger scope.
 
 So this script will build any local dependencies (or devDependencies) in
 your `package.json` file.
 
 
 ## Usage
+
+```sh
+# Install this package globally for easy access.
+npm i -g build-my-locals
+
+# Or include it as a devDependency.
+npm i -D build-my-locals
+```
 
 Given a `package.json`:
 ```json
@@ -18,9 +26,7 @@ Given a `package.json`:
         "libs": "build-my-locals"
     },
     "dependencies": {
-        "foo": "^1.2.3",
-        "remote": "git+https://github.com/etc/etc.git",
-        "bar": "libs/bar-package"
+        "bar": "./libs/bar-package"
     },
     "devDependencies": {
         "foobar": "../other/path/to/another/package"
@@ -39,5 +45,6 @@ This will build `bar` and `foobar` via their `prepare` script, but not `foo` or 
 
 
 ## TODO
+
 - recursively build local dependencies
-  - but maintain a 'already-build' list
+- maintain an 'already-build' list
