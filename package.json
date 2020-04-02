@@ -2,9 +2,12 @@
   "name": "build-my-locals",
   "version": "1.0.1",
   "description": "Build local 'file:' dependencies",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "nyc tape test.js | tap-spec"
+    "test": "tsc && nyc tape test.js | tap-spec",
+    "build": "tsc",
+    "prepack": "tsc"
   },
   "repository": {
     "type": "git",
@@ -16,12 +19,22 @@
     "url": "https://github.com/gwillz/build-my-locals/issues"
   },
   "homepage": "https://github.com/gwillz/build-my-locals#readme",
+  "bin": {
+    "build-my-locals": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "devDependencies": {
+    "@types/node": "^13.9.8",
     "nyc": "^15.0.0",
     "tap-spec": "^5.0.0",
-    "tape": "^4.9.1"
+    "tape": "^4.9.1",
+    "typescript": "^3.8.3"
   },
   "dependencies": {
-    "chalk": "^2.4.1"
+    "chalk": "^3.0.0",
+    "source-map-support": "^0.5.16"
   }
 }
