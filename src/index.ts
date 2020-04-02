@@ -1,32 +1,43 @@
+#!/usr/bin/node
 
-const path = require('path')
-const chalk = require('chalk')
-const {spawn} = require('child_process')
+import path from 'path';
+import chalk from 'chalk';
+import { spawn, ChildProcess }from 'child_process';
 
+interface Options {
+    script: string;
+    target: string;
+    groups: string[];
+}
+
+interface RunError extends Error {
+    script: string;
+    child: ChildProcess;
+}
+
+type Args = Record<string, string | string[] | true>;
 
 /**
  * This scans through 'package.json' to find dependency packages that are
  * locally sourced. It then executes the prepare scripts, as defined in
  * their respective 'package.json' files.
- *
- * This reads no runtime arguments or environment variables.
  */
-function main(options) {
-    options = {
+export default async function main(opts?: Partial<Options>) {
+    const options: Options = {
         script: 'prepare',
         target: './package.json',
         groups: [
             'dependencies',
             'devDependencies',
         ],
-        ...options,
-    }
+        ...opts,
+    };
 
-    const processes = [];
-    const promises = [];
+    const processes: ChildProcess[] = [];
+    const promises: Promise<void>[]= [];
 
     // we're building the dependencies of this package
-    const root = require(options.target);
+    const root = require(path.resolve(options.target));
 
     // combine dependency group into a single map
     // this is important to avoid duplicates
@@ -60,23 +71,30 @@ function main(options) {
 
         // build
         console.log('::', `Building '${name}'...`);
-        const {promise, child} = run(name, options.script, cwd);
+        const { promise, child } = run(name, options.script, cwd);
+
         promises.push(promise);
         processes.push(child);
     }
 
     // execute all at once
-    return Promise.all(promises)
-    .catch(({name, callee}) => {
+    try {
+        await Promise.all(promises);
+    }
+    catch (error) {
         for (let child of processes) {
-            if (child === callee) continue;
+            if (child === error.callee) continue;
             child.kill();
         }
-        throw new Error(`Fatal error in '${name}'`);
-    })
+        // re-throw
+        throw error;
+    }
 }
 
-function run(name, script, cwd) {
+/**
+ * Execute a single script.
+ */
+function run(name: string, script: string, cwd: string) {
     const child = spawn('npm', ['run', '-s', script], { cwd });
 
     // connect output events
@@ -85,21 +103,21 @@ function run(name, script, cwd) {
     child.stderr.on('data', data => output += data);
 
     // tie up results in a promise
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise<void>((resolve, reject) => {
         child.on('error', err => {
             console.log('>>', chalk.red('Fatal error!'));
             console.log(err);
-            reject({name, child});
+            reject(createError(name, child));
         })
 
         // don't fret little one, this script only exits after you're done.
         child.on('exit', err => {
-            if (err > 0) {
+            if (err && err > 0) {
                 console.log('>>', chalk.red(`Failed on '${name}'`));
                 console.log(output);
 
                 // exit, kills other child processes (I lied.)
-                reject({name, child});
+                reject(createError(name, child));
                 return;
             }
             // good
@@ -111,8 +129,24 @@ function run(name, script, cwd) {
     return {child, promise};
 }
 
-function getArgs(argv = process.argv) {
-    let args = {};
+/**
+ *
+ * @param script
+ * @param child
+ */
+function createError(script: string, child: ChildProcess): Error {
+    const error = new Error(`Fatal error in ${script}`) as RunError;
+    error.script = script;
+    error.child = child;
+    return error;
+}
+
+/**
+ *
+ * @param argv
+ */
+export function getArgs(argv = process.argv): Args {
+    let args: Args = {};
     let name = null;
 
     for (let arg of argv.slice(2)) {
@@ -128,10 +162,10 @@ function getArgs(argv = process.argv) {
         // last was a param
         if (name) {
             // arrays
-            if (arg.includes(',')) {
-                arg = arg.split(',');
-            }
-            args[name] = arg;
+            args[name] = arg.includes(',')
+                ? arg.split(',')
+                : arg;
+
             name = null;
         }
     }
@@ -144,11 +178,16 @@ function getArgs(argv = process.argv) {
 
 /* istanbul ignore next */
 if (require.main === module) {
-    main(getArgs())
-    .catch(err => {
-        process.exitCode = 1;
-    });
-}
+    require('source-map-support').install();
 
-module.exports = main;
-module.exports.getArgs = getArgs;
+    (async function() {
+        try {
+            main(getArgs());
+        }
+        catch (error) {
+            console.log(error);
+            process.exitCode = 1;
+        }
+        console.log("");
+    })();
+}
