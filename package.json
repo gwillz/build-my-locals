@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/gwillz/build-my-locals#readme",
   "devDependencies": {
-    "nyc": "^12.0.2",
+    "nyc": "^15.0.0",
     "tap-spec": "^5.0.0",
     "tape": "^4.9.1"
   },
