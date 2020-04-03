@@ -35,7 +35,7 @@ Given a `package.json`:
 }
 ```
 
-Run `npm run postinstall`. This will build `bar` and `foobar` via their `prepare` script.
+Run `npm run postinstall`. This will build `bar` and `foobar` via their `build` script.
 This also executes after calling `npm ci` or `npm install`.
 
 ### Options
@@ -43,6 +43,12 @@ This also executes after calling `npm ci` or `npm install`.
 - `--target <path>` - specify a particular `package.json` file
 - `--script <name>` - script name to run
 - `--groups <list,list>` - which groups to read for dependencies
+    - dependencies
+    - devDependencies
+    - or both!
+- `--install or --ci` - run install/ci, ignore scripts
+- `--git-pull` - pull the latest git
+- `--all` - do `git-pull, ci, script` in that order
 - `--no-color` - disable colour output
 - `--verbose` - print stdout/stderr from scripts
 
@@ -51,8 +57,3 @@ This also executes after calling `npm ci` or `npm install`.
 
 - recursively build local dependencies
 - maintain an 'already-build' list
-- is 'prepare' the best default?
-- an automatic `git pull` script would be cool
-  - perhaps `--scripts` should just be scripts
-  - and `--install` or `--ci` should be separate options
-  - `--all` argument for `ci, git-pull, script` in order
