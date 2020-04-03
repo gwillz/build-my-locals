@@ -10,6 +10,7 @@ interface Options {
     script: string;
     target: string;
     groups: string[];
+    verbose?: boolean;
     "no-color"?: boolean;
 }
 
@@ -41,7 +42,7 @@ export default async function main(opts?: Partial<Options>) {
     }
 
     const processes: ChildProcess[] = [];
-    const promises: Promise<void>[]= [];
+    const promises: Promise<[string, string]>[]= [];
 
     // we're building the dependencies of this package
     const root = require(path.resolve(options.target));
@@ -86,9 +87,17 @@ export default async function main(opts?: Partial<Options>) {
 
     // execute all at once
     try {
-        await Promise.all(promises);
+        const outputs = await Promise.all(promises);
+
+        if (options.verbose) {
+            for (let [name, output] of outputs) {
+                console.log(chalk`>> {green Output}    '${name}'`);
+                console.log(output);
+            }
+        }
     }
     catch (error) {
+        // Kill everything even if just one child is out of line.
         for (let child of processes) {
             if (child === error.callee) continue;
             child.kill();
@@ -109,11 +118,11 @@ function run(name: string, script: string, cwd: string) {
 
     // connect output events
     let output = '';
-    child.stdout.on('data', data => output += data);
-    child.stderr.on('data', data => output += data);
+    child.stdout.on('data', data => output += data.toString("utf-8"));
+    child.stderr.on('data', data => output += data.toString("utf-8"));
 
     // tie up results in a promise
-    const promise = new Promise<void>((resolve, reject) => {
+    const promise = new Promise<[string, string]>((resolve, reject) => {
         child.on('error', err => {
             console.log(chalk`>> {red Fatal error!}`);
             console.log(err);
@@ -131,12 +140,12 @@ function run(name: string, script: string, cwd: string) {
                 return;
             }
             // good
-            console.log('>>', chalk.green('Completed'), `'${name}'`);
-            resolve();
+            console.log(chalk`>> {green Completed} '${name}'`);
+            resolve([name, output]);
         })
     })
 
-    return {child, promise};
+    return { child, promise };
 }
 
 /**
