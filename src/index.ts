@@ -10,6 +10,7 @@ interface Options {
     script: string;
     target: string;
     groups: string[];
+    "no-color"?: boolean;
 }
 
 interface RunError extends Error {
@@ -34,6 +35,10 @@ export default async function main(opts?: Partial<Options>) {
         ],
         ...opts,
     };
+
+    if (options['no-color']) {
+        chalk.level = 0;
+    }
 
     const processes: ChildProcess[] = [];
     const promises: Promise<void>[]= [];
@@ -72,7 +77,7 @@ export default async function main(opts?: Partial<Options>) {
         }
 
         // build
-        console.log('::', `Building '${name}'...`);
+        console.log(chalk`:: {yellow Building}  '${name}'`);
         const { promise, child } = run(name, options.script, cwd);
 
         promises.push(promise);
@@ -110,7 +115,7 @@ function run(name: string, script: string, cwd: string) {
     // tie up results in a promise
     const promise = new Promise<void>((resolve, reject) => {
         child.on('error', err => {
-            console.log('>>', chalk.red('Fatal error!'));
+            console.log(chalk`>> {red Fatal error!}`);
             console.log(err);
             reject(createError(name, child));
         })
@@ -118,7 +123,7 @@ function run(name: string, script: string, cwd: string) {
         // don't fret little one, this script only exits after you're done.
         child.on('exit', err => {
             if (err && err > 0) {
-                console.log('>>', chalk.red(`Failed on '${name}'`));
+                console.log(chalk`>> {red Failed on '${name}'}`);
                 console.log(output);
 
                 // exit, kills other child processes (I lied.)
