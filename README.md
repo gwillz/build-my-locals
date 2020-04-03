@@ -23,29 +23,36 @@ Given a `package.json`:
 {
     "name": "...",
     "scripts": {
-        "libs": "build-my-locals"
+        "postinstall": "build-my-locals"
     },
     "dependencies": {
         "bar": "./libs/bar-package"
     },
     "devDependencies": {
+        "build-my-locals": "^1.2.2",
         "foobar": "../other/path/to/another/package"
     }
 }
 ```
 
-Run `npm run libs` or `npx build-my-locals` in the same directory as `package.json`.
-This will build `bar` and `foobar` via their `prepare` script.
+Run `npm run postinstall`. This will build `bar` and `foobar` via their `prepare` script.
+This also executes after calling `npm ci` or `npm install`.
 
 ### Options
 
 - `--target <path>` - specify a particular `package.json` file
 - `--script <name>` - script name to run
 - `--groups <list,list>` - which groups to read for dependencies
+- `--no-color` - disable colour output
+- `--verbose` - print stdout/stderr from scripts
 
 
 ## TODO
 
 - recursively build local dependencies
 - maintain an 'already-build' list
-- a '--verbose' option
+- is 'prepare' the best default?
+- an automatic `git pull` script would be cool
+  - perhaps `--scripts` should just be scripts
+  - and `--install` or `--ci` should be separate options
+  - `--all` argument for `ci, git-pull, script` in order
