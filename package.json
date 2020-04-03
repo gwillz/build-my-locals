@@ -1,6 +1,6 @@
 {
   "name": "build-my-locals",
-  "version": "1.1.2",
+  "version": "1.2.2",
   "description": "Build local 'file:' dependencies",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
