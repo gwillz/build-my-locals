@@ -29,7 +29,7 @@ Given a `package.json`:
         "bar": "./libs/bar-package"
     },
     "devDependencies": {
-        "build-my-locals": "^1.2.2",
+        "build-my-locals": "^2.3.2",
         "foobar": "../other/path/to/another/package"
     }
 }
