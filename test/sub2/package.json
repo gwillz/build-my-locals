@@ -4,7 +4,7 @@
   "description": "test",
   "private": true,
   "scripts": {
-    "prepare": "sleep 1.5 && touch yes-it-worked.txt"
+    "build": "sleep 1.5 && touch yes-it-worked.txt"
   },
   "author": "",
   "license": "ISC"

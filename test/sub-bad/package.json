@@ -4,7 +4,7 @@
   "description": "test",
   "private": true,
   "scripts": {
-    "prepare": "sleep 1 && echo I failed. && false"
+    "build": "sleep 1 && echo I failed. && false"
   },
   "author": "",
   "license": "ISC"
