@@ -2,14 +2,16 @@
 
 import path from 'path';
 import chalk from 'chalk';
-import { spawn, ChildProcess }from 'child_process';
-
-const ROOT_SCRIPTS = ["install", "ci"];
+import { spawn, ChildProcess, ChildProcessWithoutNullStreams }from 'child_process';
 
 interface Options {
     script: string;
     target: string;
     groups: string[];
+    "git-pull"?: boolean;
+    install?: boolean;
+    ci?: boolean;
+    all?: boolean;
     verbose?: boolean;
     "no-color"?: boolean;
 }
@@ -17,6 +19,11 @@ interface Options {
 interface RunError extends Error {
     script: string;
     child: ChildProcess;
+    output: string;
+}
+
+function isRunError(test: unknown): test is RunError {
+    return test instanceof Error && test.name === "RunError";
 }
 
 type Args = Record<string, string | string[] | true>;
@@ -28,7 +35,7 @@ type Args = Record<string, string | string[] | true>;
  */
 export default async function main(opts?: Partial<Options>) {
     const options: Options = {
-        script: 'prepare',
+        script: 'build',
         target: './package.json',
         groups: [
             'dependencies',
@@ -41,8 +48,17 @@ export default async function main(opts?: Partial<Options>) {
         chalk.level = 0;
     }
 
+    if (options.all) {
+        options.install = false;
+        options.ci = true;
+        options['git-pull'] = true;
+    }
+    else if (options.install || options.ci || options['git-pull']) {
+        options.script = "";
+    }
+
     const processes: ChildProcess[] = [];
-    const promises: Promise<[string, string]>[]= [];
+    const promises: Promise<string>[]= [];
 
     // we're building the dependencies of this package
     const root = require(path.resolve(options.target));
@@ -72,17 +88,48 @@ export default async function main(opts?: Partial<Options>) {
         const local = require(path.resolve(cwd, 'package.json'));
 
         // warning if missing target script
-        if (!local.scripts || !local.scripts[options.script] && !ROOT_SCRIPTS.includes(options.script)) {
+        if (options.script && !local.scripts || !local.scripts[options.script]) {
             console.log(chalk.red(`:: Local '${name}' does not have a '${options.script}' script`));
             continue;
         }
 
         // build
-        console.log(chalk`:: {yellow Building}  '${name}'`);
-        const { promise, child } = run(name, options.script, cwd);
+        promises.push((async function() {
+            let output = "";
 
-        promises.push(promise);
-        processes.push(child);
+            if (options["git-pull"]) {
+                const child = spawn('git', ['pull'], { cwd });
+                processes.push(child);
+
+                console.log(chalk`:: {yellow Pulling}    '${name}'`);
+                output += chalk`>> {green Pull Output}    '${name}'\n`;
+                output += await handleChild(name, child);
+                output += "\n";
+            }
+
+            if (options.install || options.ci) {
+                const script = options.ci ? 'ci' : 'install';
+                const child = spawn('npm', [script], { cwd });
+                processes.push(child);
+
+                console.log(chalk`:: {yellow Installing} '${name}'`);
+                output += chalk`>> {green Install Output} '${name}'\n`;
+                output += await handleChild(name, child);
+                output += "\n";
+            }
+
+            if (options.script) {
+                const child = spawn('npm', ['run', options.script], { cwd });
+                processes.push(child);
+
+                console.log(chalk`:: {yellow Building}   '${name}'`);
+                output += chalk`>> {green Build Output}   '${name}'\n`;
+                output += await handleChild(name, child);
+            }
+
+            console.log(chalk`>> {green Completed}  '${name}'`);
+            return output;
+        })());
     }
 
     // execute all at once
@@ -90,8 +137,7 @@ export default async function main(opts?: Partial<Options>) {
         const outputs = await Promise.all(promises);
 
         if (options.verbose) {
-            for (let [name, output] of outputs) {
-                console.log(chalk`>> {green Output}    '${name}'`);
+            for (let output of outputs) {
                 console.log(output);
             }
         }
@@ -110,11 +156,7 @@ export default async function main(opts?: Partial<Options>) {
 /**
  * Execute a single script.
  */
-function run(name: string, script: string, cwd: string) {
-
-    const child = ROOT_SCRIPTS.includes(script)
-        ? spawn('npm', [script], { cwd })
-        : spawn('npm', ['run', '-s', script], { cwd });
+function handleChild(name: string, child: ChildProcessWithoutNullStreams) {
 
     // connect output events
     let output = '';
@@ -122,30 +164,34 @@ function run(name: string, script: string, cwd: string) {
     child.stderr.on('data', data => output += data.toString("utf-8"));
 
     // tie up results in a promise
-    const promise = new Promise<[string, string]>((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
         child.on('error', err => {
             console.log(chalk`>> {red Fatal error!}`);
             console.log(err);
-            reject(createError(name, child));
-        })
+            reject(createError(name, child, output));
+        });
+
+        child.on('close', err => {
+            if (err && err > 0) {
+                console.log(chalk`>> {red Failed on '${name}'}`);
+                reject(createError(name, child, output));
+            }
+        });
 
         // don't fret little one, this script only exits after you're done.
         child.on('exit', err => {
             if (err && err > 0) {
                 console.log(chalk`>> {red Failed on '${name}'}`);
-                console.log(output);
 
                 // exit, kills other child processes (I lied.)
-                reject(createError(name, child));
+                reject(createError(name, child, output));
                 return;
             }
+
             // good
-            console.log(chalk`>> {green Completed} '${name}'`);
-            resolve([name, output]);
+            resolve(output);
         })
     })
-
-    return { child, promise };
 }
 
 /**
@@ -153,10 +199,11 @@ function run(name: string, script: string, cwd: string) {
  * @param script
  * @param child
  */
-function createError(script: string, child: ChildProcess): Error {
+function createError(script: string, child: ChildProcess, output: string): Error {
     const error = new Error(`Fatal error in ${script}`) as RunError;
     error.script = script;
     error.child = child;
+    error.output = output;
     return error;
 }
 
@@ -205,6 +252,9 @@ if (require.main === module) {
         }
         catch (error) {
             console.log(error);
+            if (isRunError(error)) {
+                console.log(error.output);
+            }
             process.exitCode = 1;
         }
         console.log("");
