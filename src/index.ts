@@ -4,7 +4,7 @@ import path from 'path';
 import chalk from 'chalk';
 import { spawn, ChildProcess, ChildProcessWithoutNullStreams }from 'child_process';
 
-const VERSION = "2.3.2";
+const VERSION = '2.3.3';
 
 interface Options {
     script: string;
