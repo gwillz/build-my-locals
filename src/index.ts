@@ -4,6 +4,8 @@ import path from 'path';
 import chalk from 'chalk';
 import { spawn, ChildProcess, ChildProcessWithoutNullStreams }from 'child_process';
 
+const VERSION = "2.3.2";
+
 interface Options {
     script: string;
     target: string;
@@ -14,6 +16,8 @@ interface Options {
     all?: boolean;
     verbose?: boolean;
     "no-color"?: boolean;
+    version?: boolean;
+    help?: boolean;
 }
 
 interface RunError extends Error {
@@ -43,6 +47,16 @@ export default async function main(opts?: Partial<Options>) {
         ],
         ...opts,
     };
+
+    if (options.help) {
+        help();
+        return;
+    }
+
+    if (options.version) {
+        version();
+        return;
+    }
 
     if (options['no-color']) {
         chalk.level = 0;
@@ -241,6 +255,37 @@ export function getArgs(argv = process.argv): Args {
     }
     return args;
 }
+
+
+function help() {
+    console.log('build-my-locals');
+    console.log('');
+    console.log('Options:');
+    console.log('  --script : the desired script (default: build)');
+    console.log('  --target : where to find the module names (default: ./package.json)');
+    console.log('  --groups : what groups to build (default: dependencies,devDependencies)');
+    console.log('');
+    console.log('Modes:');
+    console.log('  --git-pull : perform a pull first');
+    console.log('  --install  : before build, after pull');
+    console.log('  --ci       : before build, after pull');
+    console.log('  --all      : run pull-ci-build in order');
+    console.log('');
+    console.log('Options:');
+    console.log('  --verbose  : print too much');
+    console.log('  --no-color : disabled colours');
+    console.log('');
+    console.log(`  --version : ${VERSION}`);
+    console.log('  --help    : this');
+}
+
+
+function version() {
+    console.log('build-my-locals');
+    console.log('Version: ' + VERSION);
+    console.log('');
+}
+
 
 /* istanbul ignore next */
 if (require.main === module) {
