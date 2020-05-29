@@ -117,7 +117,7 @@ export default async function main(opts?: Partial<Options>) {
 
                 console.log(chalk`:: {yellow Pulling}    '${name}'`);
                 output += chalk`>> {green Pull Output}    '${name}'\n`;
-                output += await handleChild(name, child, !!options.all);
+                output += await handleChild('Pull', name, child, !!options.all);
                 output += "\n";
             }
 
@@ -128,7 +128,7 @@ export default async function main(opts?: Partial<Options>) {
 
                 console.log(chalk`:: {yellow Installing} '${name}'`);
                 output += chalk`>> {green Install Output} '${name}'\n`;
-                output += await handleChild(name, child);
+                output += await handleChild('Install', name, child);
                 output += "\n";
             }
 
@@ -138,7 +138,7 @@ export default async function main(opts?: Partial<Options>) {
 
                 console.log(chalk`:: {yellow Building}   '${name}'`);
                 output += chalk`>> {green Build Output}   '${name}'\n`;
-                output += await handleChild(name, child);
+                output += await handleChild('Build', name, child);
             }
 
             console.log(chalk`>> {green Completed}  '${name}'`);
@@ -170,52 +170,45 @@ export default async function main(opts?: Partial<Options>) {
 /**
  * Execute a single script.
  */
-function handleChild(name: string, child: ChildProcessWithoutNullStreams, allowFail = false) {
+function handleChild(task: string, name: string, child: ChildProcessWithoutNullStreams, quietFail = false) {
 
     // connect output events
     let output = '';
     child.stdout.on('data', data => output += data.toString("utf-8"));
     child.stderr.on('data', data => output += data.toString("utf-8"));
 
+    let exited = false;
+
     // tie up results in a promise
     return new Promise<string>((resolve, reject) => {
 
         child.on('error', err => {
-            console.log(chalk`>> {red Fatal error!}`);
+            console.log(chalk`>> {red ${task} Fatal error '${name}'!}`);
             console.log(err);
-            exit();
-        });
 
-        child.on('close', err => {
-            if (err && err > 0) {
-                console.log(chalk`>> {red Failed on '${name}'}`);
-                exit();
+            if (!quietFail) {
+                reject(createError(name, child, output));
             }
         });
 
         // don't fret little one, this script only exits after you're done.
         child.on('exit', err => {
             if (err && err > 0) {
-                console.log(chalk`>> {red Failed on '${name}'}`);
+                console.log(chalk`>> {red ${task} Failed on '${name}'}`);
 
                 // exit, kills other child processes (I lied.)
-                exit();
+                if (!quietFail) {
+                    reject(createError(name, child, output));
+                }
+                else {
+                    resolve(output);
+                }
             }
             else {
                 // good
                 resolve(output);
             }
         })
-
-        function exit() {
-            if (!allowFail) {
-                reject(createError(name, child, output));
-            }
-            else {
-                console.log(chalk`>> {red Warning: ${name}!}`);
-                console.log(chalk`>> {red ${output}}`);
-            }
-        }
     })
 }
 
