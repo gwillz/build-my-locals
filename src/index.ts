@@ -276,7 +276,7 @@ function help() {
     console.log('  --target : where to find the module names (default: ./package.json)');
     console.log('  --groups : what groups to build (default: dependencies,devDependencies)');
     console.log('');
-    console.log('Modes:');
+    console.log('Tasks:');
     console.log('  --git-pull : perform a pull first');
     console.log('  --install  : before build, after pull');
     console.log('  --ci       : before build, after pull');
