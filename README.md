@@ -51,6 +51,8 @@ This also executes after calling `npm ci` or `npm install`.
 - `--all` - do `git-pull, ci, script` in that order
 - `--no-color` - disable colour output
 - `--verbose` - print stdout/stderr from scripts
+- `--version` - print version and exit
+- `--help` - print help and exit
 
 
 ## TODO
