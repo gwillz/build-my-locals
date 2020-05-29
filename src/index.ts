@@ -102,7 +102,7 @@ export default async function main(opts?: Partial<Options>) {
         const local = require(path.resolve(cwd, 'package.json'));
 
         // warning if missing target script
-        if (options.script && !local.scripts || !local.scripts[options.script]) {
+        if (options.script && !(local.scripts && local.scripts[options.script])) {
             console.log(chalk.red(`:: Local '${name}' does not have a '${options.script}' script`));
             continue;
         }
@@ -117,7 +117,7 @@ export default async function main(opts?: Partial<Options>) {
 
                 console.log(chalk`:: {yellow Pulling}    '${name}'`);
                 output += chalk`>> {green Pull Output}    '${name}'\n`;
-                output += await handleChild(name, child);
+                output += await handleChild(name, child, true);
                 output += "\n";
             }
 
@@ -170,7 +170,7 @@ export default async function main(opts?: Partial<Options>) {
 /**
  * Execute a single script.
  */
-function handleChild(name: string, child: ChildProcessWithoutNullStreams) {
+function handleChild(name: string, child: ChildProcessWithoutNullStreams, allowFail = false) {
 
     // connect output events
     let output = '';
@@ -179,16 +179,17 @@ function handleChild(name: string, child: ChildProcessWithoutNullStreams) {
 
     // tie up results in a promise
     return new Promise<string>((resolve, reject) => {
+
         child.on('error', err => {
             console.log(chalk`>> {red Fatal error!}`);
             console.log(err);
-            reject(createError(name, child, output));
+            exit();
         });
 
         child.on('close', err => {
             if (err && err > 0) {
                 console.log(chalk`>> {red Failed on '${name}'}`);
-                reject(createError(name, child, output));
+                exit();
             }
         });
 
@@ -198,13 +199,23 @@ function handleChild(name: string, child: ChildProcessWithoutNullStreams) {
                 console.log(chalk`>> {red Failed on '${name}'}`);
 
                 // exit, kills other child processes (I lied.)
-                reject(createError(name, child, output));
-                return;
+                exit();
             }
-
-            // good
-            resolve(output);
+            else {
+                // good
+                resolve(output);
+            }
         })
+
+        function exit() {
+            if (!allowFail) {
+                reject(createError(name, child, output));
+            }
+            else {
+                console.log(chalk`>> {red Warning: ${name}!}`);
+                console.log(chalk`>> {red ${output}}`);
+            }
+        }
     })
 }
 
