@@ -117,7 +117,7 @@ export default async function main(opts?: Partial<Options>) {
 
                 console.log(chalk`:: {yellow Pulling}    '${name}'`);
                 output += chalk`>> {green Pull Output}    '${name}'\n`;
-                output += await handleChild(name, child, true);
+                output += await handleChild(name, child, !!options.all);
                 output += "\n";
             }
 
